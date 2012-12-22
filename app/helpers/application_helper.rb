@@ -1,5 +1,5 @@
 module ApplicationHelper
-      def current_user
-      @current_user ||= User.find(session[:user_id]) if session[:user_id]
-      end
+	def message_person(mailbox_name, message)
+		mailbox_name == 'inbox' ? message.sender : message.recipient_list.join(', ')
+	end
 end

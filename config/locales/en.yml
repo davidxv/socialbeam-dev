@@ -1,5 +1,12 @@
-# Sample localization file for English. Add more files in this directory for other locales.
-# See https://github.com/svenfuchs/rails-i18n/tree/master/rails%2Flocale for starting points.
-
 en:
-  hello: "Hello world"
+  hello: "Welcome to Socialbeam"
+  mailboxes:
+    trash_emptied: "Trash has been emptied"
+  messages:
+    deleted: "Message deleted"
+    invalid: "Don't you want to say something?"
+    replied: "Reply sent"
+    saved: "Draft saved"
+    sent: "Yay! Message sent"
+    trashed: "Message moved to trash"
+    unauthorised: "Unauthorised!"
