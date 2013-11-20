@@ -16,7 +16,7 @@
 		echo -e '\E[01;33m'"\033[1m$@\033[0m"
 	}
 
-	function  local_install_java
+	function  install_java
 	{
     d=`pwd`
     sudo mkdir -p /usr/lib/jvm
@@ -43,31 +43,6 @@
     source ~/.bashrc		
 	}
 
-	function aws_install_java
-	{
-    d=`pwd`
-    sudo mkdir -p /usr/lib/jvm
-    cd /usr/lib/jvm
-    say_cyan " Downloading jdk-6u29-linux-i586.bin in your /usr/lib/jvm folder"
-    sudo wget https://s3.amazonaws.com/socialbeam-repo/jdk/jdk-6u29-linux-i586.bin
-    sudo chmod +x jdk-6u29-linux-i586.bin
-    sudo ./jdk-6u29-linux-i586.bin
-    sudo update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/jdk1.6.0_29/bin/java" 1
-    sudo update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/jdk1.6.0_29/bin/javac" 1
-    sudo update-alternatives --install "/usr/lib/mozilla/plugins/libjavaplugin.so" "mozilla-javaplugin.so" "/usr/lib/jvm/jdk1.6.0_29/jre/lib/i386/libnpjp2.so" 1
-    sudo update-alternatives --install "/usr/bin/javaws" "javaws" "/usr/lib/jvm/jdk1.6.0_29/bin/javaws" 1
-    sudo update-alternatives --config java
-    sudo update-alternatives --config javac
-    sudo update-alternatives --config mozilla-javaplugin.so
-    sudo update-alternatives --config javaws
-    say_green "JDK 6.0 Update 29 Installation complete"
-    sudo echo "export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_29" >> /etc/profile
-    sudo echo "export JRE_HOME=/usr/lib/jvm/jdk1.6.0_29/jre" >> /etc/profile
-    export PATH=$PATH:/usr/lib/jvm/jdk1.6.0_29/bin
-    cd $d
-    source /etc/profile
-	}
-
 	function get_essentials
 	{
 		say_green "Updating apt-get"
@@ -84,9 +59,14 @@
     sudo apt-get install memcached
     say_green "Installing GIT and SVN"
     sudo apt-get install git-core subversion
+    sudo echo "export PS1='\u \w $(__git_ps1 "\[\033[01;34m\]%s \[\033[00m\]")$ '"  >> ~/.bashrc
+    #Patch for RVM GCC Issues
+		sudo echo "export CFLAGS='-O2 -fno-tree-dce -fno-optimize-sibling-calls'" >> ~/.bashrc
+		sudo echo "export CC='/usr/bin/gcc'" >> ~/.bashrc
+		sudo echo "source ~/.bashrc" >> /etc/profile
 	}
 
-	function local_install_rvm_ruby
+	function install_rvm_ruby
 	{
 		say_yellow "Installing RVM & REE Ruby"
     \curl -L https://get.rvm.io | bash -s stable
@@ -103,37 +83,12 @@
 
 	}
 
-	function aws_install_rvm_ruby_systemwide
-	{
-		say_green "installing RVM systemwide"
-		sudo \curl -L https://get.rvm.io | bash -s stable
-		say_green "Completed installation of RVM"
-		say_green "Installing Ruby 1.9.3 in RVM"
-		rvm install 1.9.3
-		rvm --default use 1.9.3
-    gem update --system 2.0.7 # => Important
-    say_green "RVM + REE Installation Complete"
-    #RVM Patch
-    export CFLAGS='-O2 -fno-tree-dce -fno-optimize-sibling-calls'
-    export CC='/usr/bin/gcc'
-		source /etc/profile
-		
-	}
-
-	function local_install_rails3
+	function install_rails3
 	{	
 		say_yellow "Installing Rails 3.2.13"
     gem install --version 3.2.13 rails --no-rdoc --no-ri
     say_green "Rails 3.2.13 Installation Complete"
 	}
-
-	function aws_install_rails3
-	{
-		say_yellow "Installing Rails 3.2.13"
-    gem install --version 3.2.13 rails
-    say_green "Rails 3.2.13 Installation Complete"
-	}
-
 
 	function install_myql
 	{
@@ -169,43 +124,35 @@
 	{
 		if  [ "$1" == "amazonbox" ]; then
 			if [ $(id -un) == "ubuntu" ]; then
-				if [ "$AWS_STEP" == "" ];then
-					say_cyan "Setting Up Enviromnet for $1 - Creating System Step 1"
-					say_red "Giving permission to User - ubuntu on AWS to write to PATHS in /etc/profile"
-					say_green "sudo chmod 775 /etc/profile"
-					sudo chmod 775 /etc/profile
-					
-					get_essentials
-					aws_install_java
-					aws_install_rvm_ruby_systemwide
-					export AWS_STEP="2"
-					say_green "Setting Up Enviromnet for $1 - Step 1 Complete"
-					say_cyan "Please logout and log back in for changes to take place and initiate Step 2 by calling setup same way"
-				elif [ "$AWS_STEP" == "2" ];then
-					say_cyan "Setting Up Enviromnet for $1 - Creating System Step 2"
-					say_red "Sourcing /etc/profile"
-					source /etc/profile
-					local_install_rails3
-					install_myql
-					install_apache2
-					install_passenger_rails
-					export AWS_STEP=""
-				fi
+				say_cyan "Setting Up Enviromnet for $1"
+				say_green "sudo chmod 775 /etc/profile"
+				sudo chmod 775 /etc/profile
+				get_essentials
+				source /etc/profile
+				install_java
+				install_rvm_ruby
+				install_rails3
+				install_myql
+				install_apache2
+				install_passenger_rails
+				say_red "Sourcing ~/.bashrc"
+		    source ~/.bashrc
+		    source /etc/profile
+				say_green "Installation Complete"
 			else
 				say_red "Interrupted:: You must be logged in as User named ubuntu in your Amazon EC2 Instance Server Box to run this script"
-				export AWS_STEP=""
 			fi
 		elif [ "$1" == "localbox" ];then
 			say_cyan "Setting Up Enviromnet for $1"
 			get_essentials
-			local_install_rvm_ruby
-			local_install_rails3
+			install_java
+			install_rvm_ruby
+			install_rails3
 			install_myql
 			install_apache2
 			install_passenger_rails
 			say_red "Sourcing ~/.bashrc"
-	        source ~/.bashrc
-	        local_install_java
+	    source ~/.bashrc
 			say_green "Installation Complete"
 		else
 			say_red "please pass either 'localbox' or 'amazonbox' as argument"
